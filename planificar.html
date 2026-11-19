@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Planificar · Caribe Explora</title>
+<link rel="icon" href="img/logo.png"><link rel="stylesheet" href="vendor/fa/css/all.min.css"><link rel="stylesheet" href="css/styles.css"></head><body>
+<div id="hdr"></div>
+<main class="plan">
+ <div class="col">
+  <div class="box"><h3>1. Selecciona tus ciudades</h3><p class="sub">Elige una o varias ciudades para tu recorrido.</p><div class="cities" id="cities"></div></div>
+  <div class="box"><h3>2. Fechas de tu viaje</h3>
+   <div class="dates"><label>Fecha de inicio<div class="field"><input type="date" id="d1" value="2026-11-12"></div></label>
+   <label>Fecha de fin<div class="field"><input type="date" id="d2" value="2026-11-16"></div></label></div><p class="hint" id="dh"></p></div>
+ </div>
+ <div class="col">
+  <div class="box"><h3>3. Presupuesto aproximado</h3>
+   <div class="field select"><select id="bud"><option value="500000-1000000">$ 500.000 - $ 1.000.000 COP</option><option value="1000000-2000000" selected>$ 1.000.000 - $ 2.000.000 COP</option><option value="2000000-4000000">$ 2.000.000 - $ 4.000.000 COP</option><option value="4000000-8000000">Más de $ 4.000.000 COP</option></select><i class="fa-solid fa-chevron-down"></i></div></div>
+  <div class="box" style="min-height:380px"><h3>4. ¿Qué te gustaría hacer?</h3><p class="sub">Selecciona tus intereses.</p>
+   <div class="interests" id="ints"></div>
+   <button class="go" id="go"><i class="fa-solid fa-right-to-bracket"></i> Generar itinerario</button></div>
+ </div>
+</main>
+<script src="js/data.js"></script><script src="js/common.js"></script>
+<script>renderHeader('planificar');
+const prev=store.get('plan',{}),pc=param('city');
+let sel=new Set(pc&&CITY[pc]?[pc]:(prev.cities||CITIES.map(c=>c.id))),ints=new Set(prev.interests||[]);
+if(prev.start&&!pc){$('#d1').value=prev.start;$('#d2').value=prev.end;$('#bud').value=prev.budget}
+$('#cities').innerHTML=CITIES.map(c=>`<button class="city" data-c="${c.id}"><i class="fa-solid fa-circle-check"></i>${c.name}</button>`).join('');
+$('#ints').innerHTML=INTERESTS.map(x=>`<button class="int" data-k="${x.k}"><i class="fa-solid ${x.i}"></i>${x.l}</button>`).join('');
+function paint(){$$('.city').forEach(b=>b.classList.toggle('on',sel.has(b.dataset.c)));$$('.int').forEach(b=>b.classList.toggle('on',ints.has(b.dataset.k)));
+ const a=$('#d1').value,b=$('#d2').value,n=a&&b?Math.round((new Date(b)-new Date(a))/864e5)+1:0;$('#dh').textContent=n>0?`${n} día${n>1?'s':''} · ${n-1} noche${n-1===1?'':'s'}`:'Revisa las fechas'}
+paint();
+$('#cities').onclick=e=>{const b=e.target.closest('.city');if(!b)return;sel.has(b.dataset.c)?sel.delete(b.dataset.c):sel.add(b.dataset.c);paint()};
+$('#ints').onclick=e=>{const b=e.target.closest('.int');if(!b)return;ints.has(b.dataset.k)?ints.delete(b.dataset.k):ints.add(b.dataset.k);paint()};
+$('#d1').onchange=$('#d2').onchange=paint;
+/* Generador de itinerario */
+function generar(cities,start,end,budget,interests){
+ const n=Math.round((new Date(end)-new Date(start))/864e5)+1,[bmin,bmax]=budget.split('-').map(Number);
+ const per=Math.floor(n/cities.length),ex=n%cities.length,order=[];
+ cities.forEach((c,i)=>{for(let j=0;j<per+(i<ex?1:0);j++)order.push(c)});
+ const used=new Set(),score=x=>x.tags.filter(t=>interests.includes(t)).length;
+ const pick=(city,type,pref)=>{let pool=ITEMS.filter(x=>x.city===city&&x.type===type&&!used.has(x.id));if(!pool.length)return null;
+  pool.sort((a,b)=>(score(b)+(pref&&b.tags.includes(pref)?2:0))-(score(a)+(pref&&a.tags.includes(pref)?2:0)));used.add(pool[0].id);return pool[0].id};
+ const days=order.map((city,i)=>{const d=new Date(start+'T12:00:00');d.setDate(d.getDate()+i);
+  const it=[];
+  if(i>0&&order[i-1]!==city){const t=TRANSPORTE.find(x=>x.from===order[i-1]&&x.to===city);t&&it.push({id:t.id,slot:'Traslado'})}
+  const m=pick(city,'lugar'),a=pick(city,'comida','gastronomia'),t=pick(city,'tour'),l=pick(city,'lugar'),nn=pick(city,'comida',interests.includes('noche')?'noche':null);
+  m&&it.push({id:m,slot:'Mañana'});a&&it.push({id:a,slot:'Almuerzo'});(t||l)&&it.push({id:t||l,slot:'Tarde'});nn&&it.push({id:nn,slot:'Noche'});
+  return{date:d.toISOString().slice(0,10),city,items:it}});
+ const hotels={},perNight=(bmax*0.4)/Math.max(n-1,1);
+ [...new Set(order)].forEach(c=>{const hs=ITEMS.filter(x=>x.city===c&&x.type==='hotel').sort((a,b)=>a.cost-b.cost);
+  hotels[c]=(hs.filter(h=>h.cost<=perNight).pop()||hs[0]).id});
+ return{cities:[...new Set(order)],start,end,budget,bmin,bmax,interests,days,hotels,people:1}}
+$('#go').onclick=()=>{const a=$('#d1').value,b=$('#d2').value,n=Math.round((new Date(b)-new Date(a))/864e5)+1;
+ if(!sel.size)return toast('Elige al menos una ciudad',false);
+ if(!a||!b||n<1)return toast('La fecha de fin debe ser posterior al inicio',false);
+ if(n>14)return toast('Máximo 14 días por itinerario',false);
+ const cities=CITIES.map(c=>c.id).filter(c=>sel.has(c)),bud=$('#bud').value;
+ store.set('plan',{cities,start:a,end:b,budget:bud,interests:[...ints]});
+ store.set('itin',generar(cities,a,b,bud,[...ints]));pushNotif('Itinerario listo',`Tu viaje de ${n} día${n>1?'s':''} por ${cities.map(c=>CITY[c].name).join(', ')} fue generado.`);
+ location.href='itinerario.html'};
+</script></body></html>

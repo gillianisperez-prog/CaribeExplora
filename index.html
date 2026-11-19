@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Inicio · Caribe Explora</title>
+<link rel="icon" href="img/logo.png"><link rel="stylesheet" href="vendor/fa/css/all.min.css"><link rel="stylesheet" href="css/styles.css"></head><body>
+<div id="hdr"></div>
+<section class="hero">
+ <div><h1>Tres ciudades, mil experiencias</h1>
+ <p>Descubre la magia del Caribe colombiano: Cartagena, Barranquilla y Santa Marta.</p>
+ <form class="search" id="sf" autocomplete="off"><i class="fa-solid fa-magnifying-glass"></i><input id="q" type="text" aria-label="Buscar" placeholder="Busca destinos, hoteles, tours…"><div class="sugg" id="sg"></div></form></div>
+ <img class="hero-img" src="img/hero-cartagena.png" alt="Cartagena">
+</section>
+<div class="section-head"><h2>Destinos Populares</h2><a href="explorar.html">Ver todos <i class="fa-solid fa-arrow-right"></i></a></div>
+<section class="pop" id="pop"></section>
+<nav class="cats">
+ <a href="servicios.html?tipo=hoteles"><i class="fa-solid fa-hotel"></i>Hoteles</a><a href="servicios.html?tipo=restaurantes"><i class="fa-solid fa-utensils"></i>Restaurantes</a>
+ <a href="servicios.html?tipo=tours"><i class="fa-solid fa-camera"></i>Tours</a><a href="servicios.html?tipo=transporte"><i class="fa-solid fa-bus"></i>Transporte</a>
+</nav>
+<script src="js/data.js"></script><script src="js/common.js"></script>
+<script>renderHeader('inicio');
+$('#pop').innerHTML=CITIES.map(c=>`<a class="card" href="destino.html?id=${c.id}"><img src="img/${c.thumb}" alt=""><div><h3>${c.name}</h3><p>${c.tag}</p></div></a>`).join('');
+const q=$('#q'),sg=$('#sg');
+$('#sf').onsubmit=e=>{e.preventDefault();if(q.value.trim())location.href='buscar.html?q='+encodeURIComponent(q.value.trim())};
+q.oninput=()=>{const t=norm(q.value.trim());if(!t){sg.innerHTML='';sg.style.display='none';return}
+ const r=[...CITIES.filter(c=>norm(c.name).includes(t)).map(c=>({h:'destino.html?id='+c.id,n:c.name,s:'Destino',i:'fa-location-dot'})),
+  ...ALL.filter(x=>x.type!=='transporte'&&norm(x.name).includes(t)).slice(0,5).map(x=>({h:'destino.html?id='+x.city+'&tab='+x.type,n:x.name,s:TYPE[x.type].label+' · '+CITY[x.city].name,i:TYPE[x.type].icon}))];
+ sg.innerHTML=r.length?r.map(x=>`<a href="${x.h}"><i class="fa-solid ${x.i}"></i><b>${x.n}</b><span>${x.s}</span></a>`).join(''):'<div class="none">Sin resultados</div>';sg.style.display='block'};
+document.addEventListener('click',e=>{if(!e.target.closest('#sf'))sg.style.display='none'});
+</script></body></html>

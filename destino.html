@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Destino · Caribe Explora</title>
+<link rel="icon" href="img/logo.png"><link rel="stylesheet" href="vendor/fa/css/all.min.css"><link rel="stylesheet" href="css/styles.css"></head><body>
+<div id="hdr"></div>
+<main id="main"></main>
+<script src="js/data.js"></script><script src="js/common.js"></script>
+<script>renderHeader('explorar');
+const c=CITY[param('id')]||CITIES[0];let tab=param('tab')||'lugar',cat=param('cat')||'Todos';if(!TYPE[tab]||tab==='transporte')tab='lugar';
+const items=ALL.filter(x=>x.city===c.id&&x.type!=='transporte');
+document.title=c.name+' · Caribe Explora';
+$('#main').innerHTML=`<section class="dhero" style="--img:url(../img/${c.card})"><div class="dh-in"><a class="back" href="explorar.html"><i class="fa-solid fa-arrow-left"></i> Explorar destinos</a>
+ <h1>${c.name}</h1><div class="loc"><i class="fa-solid fa-location-dot"></i>${c.state}</div><p>${c.desc}</p>
+ <div class="dh-act"><a class="btn" href="planificar.html?city=${c.id}"><i class="fa-solid fa-person-walking-luggage"></i> Planificar viaje aquí</a>${heartBtn('d:'+c.id,'lg')}</div></div></section>
+ <div class="filters"><div class="pills" id="tabs">${['lugar','comida','hotel','tour'].map(t=>`<button class="pill" data-t="${t}"><i class="fa-solid ${TYPE[t].icon}"></i> ${TYPE[t].tab} <small>${items.filter(x=>x.type===t).length}</small></button>`).join('')}</div>
+ <div class="pills" id="cats">${['Todos','Cultura','Gastronomía','Recreación'].map(x=>`<button class="pill sm">${x}</button>`).join('')}</div></div>
+ <section class="items" id="list"></section>`;
+function draw(){$$('#tabs .pill').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));$$('#cats .pill').forEach(b=>b.classList.toggle('on',b.textContent===cat));
+ const l=items.filter(x=>x.type===tab&&(cat==='Todos'||x.cat===cat));
+ $('#list').innerHTML=l.length?l.map(itemCard).join(''):'<p class="empty">No hay resultados para este filtro.</p>'}
+draw();
+$('#tabs').onclick=e=>{const b=e.target.closest('.pill');if(b){tab=b.dataset.t;draw()}};
+$('#cats').onclick=e=>{const b=e.target.closest('.pill');if(b){cat=b.textContent;draw()}};
+</script></body></html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Itinerario · Caribe Explora</title>
+<link rel="icon" href="img/logo.png"><link rel="stylesheet" href="vendor/fa/css/all.min.css"><link rel="stylesheet" href="css/styles.css"></head><body>
+<div id="hdr"></div>
+<main class="itin" id="main"></main>
+<script src="js/data.js"></script><script src="js/common.js"></script>
+<script>renderHeader('planificar');
+const SLOT={Mañana:'fa-sun','Almuerzo':'fa-utensils',Tarde:'fa-cloud-sun',Noche:'fa-moon',Traslado:'fa-bus',Libre:'fa-star'};
+function total(it){let a=0,h=0;it.days.forEach(d=>d.items.forEach(x=>a+=BY_ID[x.id].cost));
+ it.days.forEach((d,i)=>{});const nights={};it.days.forEach(d=>nights[d.city]=(nights[d.city]||0)+1);
+ const last=it.days.length-1;Object.keys(nights).forEach(c=>{const hot=BY_ID[it.hotels[c]];if(hot)h+=hot.cost*(c===it.days[last].city?nights[c]-1:nights[c])});
+ return{act:a*it.people,hot:h,all:a*it.people+h}}
+function draw(){const it=store.get('itin',null),m=$('#main');
+ if(!it){m.innerHTML=`<div class="emptybox"><i class="fa-regular fa-calendar"></i><h3>Aún no tienes un itinerario</h3><p>Elige ciudades, fechas, presupuesto e intereses y lo armamos por ti.</p><a class="btn" href="planificar.html">Planificar viaje</a></div>`;return}
+ const t=total(it),pct=Math.min(100,Math.round(t.all/it.bmax*100)),st=t.all<=it.bmax?(t.all<it.bmin?'Por debajo de tu rango':'Dentro de tu presupuesto'):'Supera tu presupuesto',ok=t.all<=it.bmax;
+ m.innerHTML=`<div class="it-head"><div><h1>Tu itinerario</h1><p>${fmtDate(it.start,{day:'numeric',month:'long'})} – ${fmtDate(it.end,{day:'numeric',month:'long',year:'numeric'})} · ${it.cities.map(c=>CITY[c].name).join(' · ')}</p></div>
+  <div class="it-act"><button class="btn ghost" id="cp"><i class="fa-regular fa-copy"></i> Copiar resumen</button><button class="btn ghost" onclick="print()"><i class="fa-solid fa-print"></i> Imprimir</button><a class="btn" href="planificar.html"><i class="fa-solid fa-rotate"></i> Editar plan</a></div></div>
+ <div class="sum"><div class="sbox"><span>Días</span><b>${it.days.length}</b></div><div class="sbox"><span>Ciudades</span><b>${it.cities.length}</b></div>
+  <div class="sbox"><span>Viajeros</span><b class="step"><button data-p="-1">−</button>${it.people}<button data-p="1">+</button></b></div>
+  <div class="sbox wide"><span>Costo estimado (actividades + hotel)</span><b>${cop(t.all)}</b><div class="bar"><i class="${ok?'':'over'}" style="width:${pct}%"></i></div><small class="${ok?'':'overt'}">${st} · ${cop(it.bmin)} – ${cop(it.bmax)}</small></div></div>
+ <h2 class="h2">Hoteles</h2><div class="hotels">${it.cities.map(c=>{const h=BY_ID[it.hotels[c]];return `<div class="hrow"><img src="img/${CITY[c].thumb}" alt=""><div><b>${h.name}</b><span>${CITY[c].name} · ${cop(h.cost)} / noche</span></div><a class="btn-sm" href="destino.html?id=${c}&tab=hotel">Cambiar</a></div>`}).join('')}</div>
+ <h2 class="h2">Día a día</h2>${it.days.map((d,i)=>`<section class="day"><div class="day-h"><div><span class="dn">Día ${i+1}</span><b>${fmtDate(d.date)}</b></div><span class="dc"><i class="fa-solid fa-location-dot"></i>${CITY[d.city].name}</span></div>
+  ${d.items.map((x,j)=>{const p=BY_ID[x.id];return `<div class="ev"><div class="slot"><i class="fa-solid ${SLOT[x.slot]||'fa-star'}"></i>${x.slot}</div><div class="evb"><b>${p.name}</b><span>${p.desc}</span></div><div class="evp">${cop(p.cost)}</div>
+   <div class="evx"><button data-mv="${i},${j},-1" title="Subir"><i class="fa-solid fa-chevron-up"></i></button><button data-mv="${i},${j},1" title="Bajar"><i class="fa-solid fa-chevron-down"></i></button><button data-rm="${i},${j}" title="Quitar"><i class="fa-solid fa-xmark"></i></button></div></div>`}).join('')||'<p class="hint">Día libre</p>'}
+  <div class="addrow"><select data-add-day="${i}"><option value="">+ Agregar actividad en ${CITY[d.city].name}…</option>${ITEMS.filter(x=>x.city===d.city&&x.type!=='hotel'&&!d.items.some(y=>y.id===x.id)).map(x=>`<option value="${x.id}">${TYPE[x.type].label}: ${x.name}</option>`).join('')}</select></div></section>`).join('')}
+ <p class="note" style="padding:10px 0 50px"><i class="fa-solid fa-circle-info"></i> Precios por persona y referenciales. El hotel se calcula por noche.</p>`;
+ $('#cp').onclick=()=>{const txt=`Itinerario Caribe Explora (${it.start} a ${it.end})\n`+it.days.map((d,i)=>`\nDía ${i+1} · ${fmtDate(d.date)} · ${CITY[d.city].name}\n`+d.items.map(x=>`  - ${x.slot}: ${BY_ID[x.id].name}`).join('\n')).join('\n');
+  (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>toast('Resumen copiado')).catch(()=>toast('No se pudo copiar',false))}}
+document.addEventListener('click',e=>{const it=store.get('itin',null);if(!it)return;
+ const rm=e.target.closest('[data-rm]'),mv=e.target.closest('[data-mv]'),pp=e.target.closest('[data-p]');
+ if(rm){const[i,j]=rm.dataset.rm.split(',').map(Number);it.days[i].items.splice(j,1)}
+ else if(mv){const[i,j,d]=mv.dataset.mv.split(',').map(Number),a=it.days[i].items;if(j+d<0||j+d>=a.length)return;[a[j],a[j+d]]=[a[j+d],a[j]]}
+ else if(pp){it.people=Math.min(20,Math.max(1,it.people+Number(pp.dataset.p)))}else return;
+ store.set('itin',it);draw()});
+document.addEventListener('change',e=>{const s=e.target.closest('[data-add-day]');if(!s||!s.value)return;const it=store.get('itin'),d=it.days[s.dataset.addDay];
+ d.items.push({id:s.value,slot:BY_ID[s.value].type==='comida'?'Almuerzo':'Libre'});store.set('itin',it);draw();toast('Actividad agregada')});
+draw();
+</script></body></html>

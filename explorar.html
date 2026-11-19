@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Explorar · Caribe Explora</title>
+<link rel="icon" href="img/logo.png"><link rel="stylesheet" href="vendor/fa/css/all.min.css"><link rel="stylesheet" href="css/styles.css"></head><body>
+<div id="hdr"></div>
+<div class="filters">
+ <div class="pills" id="pills"><button class="pill on">Todos</button><button class="pill">Cultura</button><button class="pill">Gastronomía</button><button class="pill">Recreación</button></div>
+ <div class="fsearch"><i class="fa-solid fa-magnifying-glass"></i><input id="q" type="text" aria-label="Buscar" placeholder="Buscar destino o lugar"></div>
+</div>
+<section class="grid" id="grid"></section><p class="empty" id="empty" hidden>No encontramos destinos con ese filtro.</p>
+<script src="js/data.js"></script><script src="js/common.js"></script>
+<script>renderHeader('explorar');
+let cat='Todos',q='';
+const match=(c)=>ALL.filter(x=>x.city===c.id&&x.type!=='transporte'&&(cat==='Todos'||x.cat===cat)&&(!q||norm(x.name+' '+x.desc).includes(q)||norm(c.name).includes(q)));
+function draw(){const list=CITIES.filter(c=>match(c).length||(!q&&cat==='Todos'));
+ const k=cat==='Todos'?'':'&cat='+encodeURIComponent(cat);
+ $('#grid').innerHTML=list.map(c=>`<article class="dest"><div class="ph"><a href="destino.html?id=${c.id}${k}"><img src="img/${c.card}" alt="${c.name}"></a>${heartBtn('d:'+c.id)}</div>
+ <div class="body"><a href="destino.html?id=${c.id}${k}"><h3>${c.name}</h3></a><div class="loc"><i class="fa-solid fa-location-dot"></i>${c.state}</div>
+ <div class="stats">${[['lugar','fa-landmark','Lugares'],['comida','fa-utensils','Comida'],['hotel','fa-bed','Hoteles'],['tour','fa-camera','Tours']].map(s=>`<a href="destino.html?id=${c.id}&tab=${s[0]}${k}" title="${match(c).filter(x=>x.type===s[0]).length} resultados"><span><i class="fa-solid ${s[1]}"></i>${s[2]}</span></a>`).join('')}</div></div></article>`).join('');
+ $('#empty').hidden=list.length>0}
+draw();
+$('#pills').onclick=e=>{const p=e.target.closest('.pill');if(!p)return;$$('.pill').forEach(b=>b.classList.remove('on'));p.classList.add('on');cat=p.textContent;draw()};
+$('#q').oninput=e=>{q=norm(e.target.value.trim());draw()};
+</script></body></html>

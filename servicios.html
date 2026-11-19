@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Servicios · Caribe Explora</title>
+<link rel="icon" href="img/logo.png"><link rel="stylesheet" href="vendor/fa/css/all.min.css"><link rel="stylesheet" href="css/styles.css"></head><body>
+<div id="hdr"></div>
+<div class="filters"><div class="pills" id="tabs"></div>
+ <div class="pills"><select id="sort" class="sel"><option value="">Ordenar</option><option value="asc">Precio: menor a mayor</option><option value="desc">Precio: mayor a menor</option></select></div></div>
+<div class="filters sub"><div class="pills" id="cf"></div><div class="note"><i class="fa-solid fa-circle-info"></i> Datos y precios de ejemplo (referenciales)</div></div>
+<section class="items" id="list"></section>
+<script src="js/data.js"></script><script src="js/common.js"></script>
+<script>renderHeader('explorar');
+const M={hoteles:'hotel',restaurantes:'comida',tours:'tour',transporte:'transporte'},N={hoteles:'Hoteles',restaurantes:'Restaurantes',tours:'Tours',transporte:'Transporte'},IC={hoteles:'fa-hotel',restaurantes:'fa-utensils',tours:'fa-camera',transporte:'fa-bus'};
+let tipo=M[param('tipo')]?param('tipo'):'hoteles',city='all',sort='';
+$('#tabs').innerHTML=Object.keys(M).map(k=>`<button class="pill" data-k="${k}"><i class="fa-solid ${IC[k]}"></i> ${N[k]}</button>`).join('');
+$('#cf').innerHTML=`<button class="pill sm" data-c="all">Todas las ciudades</button>`+CITIES.map(c=>`<button class="pill sm" data-c="${c.id}">${c.name}</button>`).join('');
+function draw(){$$('#tabs .pill').forEach(b=>b.classList.toggle('on',b.dataset.k===tipo));$$('#cf .pill').forEach(b=>b.classList.toggle('on',b.dataset.c===city));
+ let l=ALL.filter(x=>x.type===M[tipo]&&(city==='all'||x.city===city||x.to===city));if(sort)l.sort((a,b)=>sort==='asc'?a.cost-b.cost:b.cost-a.cost);
+ $('#list').innerHTML=l.length?l.map(itemCard).join(''):'<p class="empty">Sin resultados.</p>';document.title=N[tipo]+' · Caribe Explora'}
+draw();
+$('#tabs').onclick=e=>{const b=e.target.closest('.pill');if(b){tipo=b.dataset.k;history.replaceState(0,'','?tipo='+tipo);draw()}};
+$('#cf').onclick=e=>{const b=e.target.closest('.pill');if(b){city=b.dataset.c;draw()}};
+$('#sort').onchange=e=>{sort=e.target.value;draw()};
+</script></body></html>

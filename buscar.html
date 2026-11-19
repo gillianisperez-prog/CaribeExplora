@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Buscar · Caribe Explora</title>
+<link rel="icon" href="img/logo.png"><link rel="stylesheet" href="vendor/fa/css/all.min.css"><link rel="stylesheet" href="css/styles.css"></head><body>
+<div id="hdr"></div>
+<div class="filters"><form class="fsearch" id="sf" style="width:520px;max-width:100%"><i class="fa-solid fa-magnifying-glass"></i><input id="q" type="text" aria-label="Buscar" placeholder="Busca destinos, hoteles, tours…"></form><div id="cnt" class="note"></div></div>
+<div class="wrap" id="res" style="padding-bottom:60px"></div>
+<script src="js/data.js"></script><script src="js/common.js"></script>
+<script>renderHeader('explorar');
+const qq=param('q')||'';$('#q').value=qq;
+$('#sf').onsubmit=e=>{e.preventDefault();location.href='buscar.html?q='+encodeURIComponent($('#q').value.trim())};
+const t=norm(qq.trim());
+const dest=t?CITIES.filter(c=>norm(c.name+' '+c.state+' '+c.desc).includes(t)):[];
+const its=t?ALL.filter(x=>norm(x.name+' '+x.desc+' '+CITY[x.city].name+' '+TYPE[x.type].label).includes(t)):[];
+$('#cnt').textContent=t?`${dest.length+its.length} resultados para “${qq}”`:'Escribe algo para buscar';
+$('#res').innerHTML=(dest.length?`<h2 class="h2">Destinos</h2><div class="pop">${dest.map(c=>`<a class="card" href="destino.html?id=${c.id}"><img src="img/${c.thumb}" alt=""><div><h3>${c.name}</h3><p>${c.tag}</p></div></a>`).join('')}</div>`:'')+
+ (its.length?`<h2 class="h2">Lugares, comida, hoteles, tours y transporte</h2><section class="items" style="padding:0">${its.map(itemCard).join('')}</section>`:'')+
+ (t&&!dest.length&&!its.length?'<p class="empty">No encontramos resultados. Prueba con “playa”, “hotel” o “Tayrona”.</p>':'');
+</script></body></html>

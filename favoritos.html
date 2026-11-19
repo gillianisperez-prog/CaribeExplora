@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Favoritos · Caribe Explora</title>
+<link rel="icon" href="img/logo.png"><link rel="stylesheet" href="vendor/fa/css/all.min.css"><link rel="stylesheet" href="css/styles.css"></head><body>
+<div id="hdr"></div>
+<div class="filters"><div class="pills" id="tabs"></div><div class="note" id="cnt"></div></div>
+<div class="wrap" id="res" style="padding-bottom:60px"></div>
+<script src="js/data.js"></script><script src="js/common.js"></script>
+<script>renderHeader('favoritos');
+let tab='all';const TABS=[['all','Todos'],['d','Destinos'],['lugar','Lugares'],['comida','Comida'],['hotel','Hoteles'],['tour','Tours'],['transporte','Transporte']];
+$('#tabs').innerHTML=TABS.map(t=>`<button class="pill" data-t="${t[0]}">${t[1]}</button>`).join('');
+function draw(){$$('#tabs .pill').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
+ const f=favs(),dest=f.filter(k=>k[0]==='d').map(k=>CITY[k.slice(2)]).filter(Boolean),its=f.filter(k=>k[0]==='i').map(k=>BY_ID[k.slice(2)]).filter(Boolean);
+ const sd=tab==='all'||tab==='d'?dest:[],si=its.filter(x=>tab==='all'||tab===x.type);
+ $('#cnt').textContent=`${dest.length+its.length} favoritos`;
+ $('#res').innerHTML=(sd.length?`<h2 class="h2">Destinos</h2><section class="grid" style="padding:0 0 10px">${sd.map(c=>`<article class="dest"><div class="ph"><a href="destino.html?id=${c.id}"><img src="img/${c.card}" alt="${c.name}"></a>${heartBtn('d:'+c.id)}</div><div class="body"><a href="destino.html?id=${c.id}"><h3>${c.name}</h3></a><div class="loc"><i class="fa-solid fa-location-dot"></i>${c.state}</div></div></article>`).join('')}</section>`:'')+
+ (si.length?`<h2 class="h2">Lugares y servicios</h2><section class="items" style="padding:0">${si.map(itemCard).join('')}</section>`:'')+
+ (!sd.length&&!si.length?`<div class="emptybox"><i class="fa-regular fa-heart"></i><h3>Aún no tienes favoritos</h3><p>Toca el corazón en destinos, lugares, hoteles o tours para guardarlos aquí.</p><a class="btn" href="explorar.html">Explorar destinos</a></div>`:'')}
+draw();$('#tabs').onclick=e=>{const b=e.target.closest('.pill');if(b){tab=b.dataset.t;draw()}};
+document.addEventListener('favchange',()=>setTimeout(draw,350));
+</script></body></html>
